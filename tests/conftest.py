@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from playwright.sync_api import sync_playwright
 
-from job_search.scrapers.base import BaseScraper
+from app.services.scraping.base import BaseScraper
 
 FIXTURES = Path(__file__).parent / "fixtures"
 

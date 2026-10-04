@@ -53,6 +53,7 @@ python -m venv .venv
 # macOS/Linux:  source .venv/bin/activate
 
 pip install -r requirements.txt
+pip install -e .
 playwright install chromium
 
 # Windows: copy .env.example .env      macOS/Linux: cp .env.example .env
@@ -69,7 +70,7 @@ OPENAI_API_KEY=sk-...
 ## 2. Start the app
 
 ```bash
-python -m job_search.web
+python -m app.main serve
 ```
 
 On Windows you can also just **double-click `start_ui.bat`**.
@@ -189,7 +190,7 @@ Click **My jobs** (top right).
 - When it finishes, the report opens in your browser (untick *Open report when ready* if you don't want that).
 - The card shows the next run, the last run with a link to its report, and a **Turn off** button.
 - Changed your settings? Click **Update daily search**.
-- Test it without waiting: `python -m job_search.daily` (log: `data/scheduled.log`).
+- Test it without waiting: `python -m app.main daily` (log: `data/scheduled.log`).
 
 ### Step 9 · Reload, restart and Clear
 
@@ -244,10 +245,10 @@ command line). See `.env.example` for the full list with comments.
 Everything the page does is also available without it:
 
 ```bash
-python -m job_search --resume my_resume.pdf --location Pune Remote --experience 2-4 --results linkedin=20 naukri=12
+python -m app.main search --resume my_resume.pdf --location Pune Remote --experience 2-4 --results linkedin=20 naukri=12
 ```
 
-Run `python -m job_search --help` for all options. Each option matches a `.env` setting; the command line wins.
+Run `python -m app.main search --help` for all options. Each option matches a `.env` setting; the command line wins.
 
 ## 7. Where your data is stored
 
@@ -267,26 +268,37 @@ Your resume text and job descriptions are sent to OpenAI for reading and scoring
 ## 8. For developers
 
 ```
-job_search/
-  web.py           local web app (Flask) + static/index.html
-  pipeline.py      the search flow: resume -> sites -> filters -> details -> scoring -> report
-  browser.py       one browser per site, each on its own thread (parallel sites)
-  scrapers/        linkedin.py, naukri.py, indeed.py on top of base.py (retries, stop, give-up)
-  llm.py           OpenAI: resume reading, parallel job scoring, token usage
-  cache.py         saved descriptions / scores / resume readings
-  history.py       applied / hidden / seen jobs and run history (SQLite)
-  session.py       the page's saved session (survives reloads and restarts)
-  schedule.py      daily search (Windows Task Scheduler / cron); daily.py runs it
-  cleanup.py       KEEP_DAYS housekeeping
-  html_report.py, report.py   HTML / Excel / CSV reports
-tests/             offline tests: saved HTML pages, fake OpenAI, fake job sites
+src/app/
+  main.py              single entry point: serve (FastAPI web app) / search (CLI) / daily
+  api/                 FastAPI routers, one per resource, + dependencies.py (ApiContext)
+  services/
+    search_service.py  the search flow: resume -> sites -> filters -> details -> scoring -> report
+    search_manager.py  runs one search at a time in a background thread, tracks live status
+    scraping/          browser.py (one browser per site, each on its own thread) + base.py
+                        (retries, stop, give-up) + linkedin.py, naukri.py, indeed.py
+    llm_service.py      OpenAI: resume reading, parallel job scoring, token usage
+    matching_service.py parsing/filtering/ranking helpers shared by scrapers and search_service
+    cleanup_service.py  KEEP_DAYS housekeeping
+    schedule_service.py daily search (Windows Task Scheduler / cron)
+    reporting/          HTML / Excel / CSV reports
+  repositories/        SQLite (history, cache) and JSON (schedule, session) persistence
+  models/              plain dataclasses: Job, Profile, SearchOptions, Schedule...
+  schemas/             API error type, request validation helpers, response serializers
+  config/              Settings (.env) + static location data
+  database/            shared SQLite connection helper
+frontend/
+  index.html           the whole UI: vanilla HTML/CSS/JS, no build step
+tests/
+  unit/                fast, no browser: pure logic, repositories, serializers
+  integration/         saved HTML pages + a real (headless) browser, fake OpenAI, fake job sites
 ```
 
 ```bash
+pip install -e .   # one-time, makes `app` importable
 pip install -r requirements-dev.txt
 pytest
 ```
 
-Tests never touch the real sites or OpenAI. To add a job board, create `job_search/scrapers/<board>.py`
-with a class extending `BaseScraper` (implement `search()` and, if needed, `fetch_description()`) and
-register it in `job_search/scrapers/__init__.py`.
+Tests never touch the real sites or OpenAI. To add a job board, create
+`src/app/services/scraping/<board>.py` with a class extending `BaseScraper` (implement `search()`
+and, if needed, `fetch_description()`) and register it in `src/app/services/scraping/__init__.py`.
