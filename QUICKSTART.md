@@ -67,6 +67,7 @@ Every step from zero to your first job search. For the full guide with screensho
 
     ```bash
     pip install -r requirements.txt
+    pip install -e .
     ```
 
 11. Install the browser that does the searching:
@@ -96,7 +97,7 @@ Every step from zero to your first job search. For the full guide with screensho
 14. Start the app (with `(.venv)` active, inside the project folder):
 
     ```bash
-    python -m job_search.web
+    python -m app.main serve
     ```
 
     - Windows shortcut: **double-click `start_ui.bat`** in the project folder instead.
@@ -132,7 +133,7 @@ Every step from zero to your first job search. For the full guide with screensho
     ```bash
     cd Desktop/playwright-python-job-search
     source .venv/Scripts/activate        # use your terminal's command from step 9
-    python -m job_search.web
+    python -m app.main serve
     ```
 
     Or just double-click **`start_ui.bat`** (Windows).
@@ -144,6 +145,7 @@ Every step from zero to your first job search. For the full guide with screensho
     ```bash
     git pull
     pip install -r requirements.txt
+    pip install -e .
     ```
 
 ---
@@ -153,10 +155,10 @@ Every step from zero to your first job search. For the full guide with screensho
 | Problem | Fix |
 |---|---|
 | `python` / `pip` not found | Reinstall Python with **"Add python.exe to PATH"** ticked, open a new terminal. Or use `py`. |
-| `No module named job_search` | You're not in the project folder: `cd playwright-python-job-search`. |
-| `No module named flask` / `playwright` | The environment isn't active (no `(.venv)`): run step 9, then step 10. |
+| `No module named app` | You're not in the project folder, or skipped `pip install -e .`: `cd playwright-python-job-search` then step 10. |
+| `No module named fastapi` / `playwright` | The environment isn't active (no `(.venv)`): run step 9, then step 10. |
 | Browser error on start ("Executable doesn't exist") | Run step 11: `playwright install chromium`. |
 | Page says **OPENAI_API_KEY is not set** | Check step 13 (key saved in `.env`), then restart the app (Ctrl+C, step 14). |
-| **Address already in use** / port 8000 busy | The app is already running in another window, or start it on another port: `python -m job_search.web --port 8001`. |
+| **Address already in use** / port 8000 busy | The app is already running in another window, or start it on another port: `python -m app.main serve --port 8001`. |
 | A site finds **0 jobs** | Look at the number line under the progress bar and the yellow hint; widen cities, experience or *Posted within*. Click **Show log** for details. |
 | "Verify you're human" on Naukri / Indeed | Keep **Show browser** on and solve it in the browser window. |
